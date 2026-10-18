@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐰 Code Rabbit – กระต่ายน้อยส่งแครอท (ม.2)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Prompt & Kanit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;800&family=Prompt:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rabbit: {
+                            bg: '#f0fdf4',
+                            grass: '#86efac',
+                            grid: '#bbf7d0',
+                            orange: '#ff781f',
+                            pink: '#f472b6',
+                            purple: '#c084fc',
+                            dark: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        prompt: ['Prompt', 'sans-serif'],
+                        kanit: ['Kanit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #e0f2fe;
+            background-image: radial-gradient(#38bdf8 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-press {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+        }
+        .btn-press:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.18);
+        }
+        .btn-press:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.18);
+        }
+
+        .card-shadow {
+            box-shadow: 0 16px 32px -8px rgba(14, 165, 233, 0.2), 0 8px 16px -4px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Cute Grid Cell styling */
+        .grid-cell {
+            transition: all 0.2s ease;
+        }
+
+        /* Bunny rotation & animation */
+        .bunny-sprite {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes float-short {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float {
+            animation: float-short 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .animate-pulse-bounce {
+            animation: pulse-bounce 1s infinite;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #38bdf8;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0284c7;
+        }
+
+        .command-card {
+            touch-action: none;
+        }
+        .command-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 sm:p-4 md:p-6 relative text-slate-800">
+
+    <!-- TOP HEADER / BRAND & HUD -->
+    <header class="w-full max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-3 mb-3">
+        <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border-4 border-sky-400 shadow-md">
+            <span class="text-3xl animate-float">🐰</span>
+            <div>
+                <h1 class="text-lg md:text-2xl font-extrabold text-sky-600 leading-tight">Code Rabbit</h1>
+                <p class="text-xs text-sky-400 font-bold">กระต่ายน้อยส่งแครอท (วิทยาการคำนวณ ม.2)</p>
+            </div>
+        </div>
+
+        <!-- HUD Counters -->
+        <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
+            <!-- Level Badge -->
+            <div class="bg-indigo-500 text-white font-black px-3.5 py-1.5 rounded-2xl border-b-4 border-indigo-700 text-sm md:text-base flex items-center gap-1.5 shadow">
+                <i class="fa-solid fa-flag"></i>
+                <span id="level-display">ด่าน 1/5</span>
+            </div>
+
+            <!-- Score -->
+            <div class="bg-amber-400 text-amber-950 font-black px-3.5 py-1.5 rounded-2xl border-b-4 border-amber-600 text-sm md:text-base flex items-center gap-1.5 shadow">
+                <span>⭐</span>
+                <span id="score-display">0</span>
+            </div>
+
+            <!-- Lives -->
+            <div class="bg-rose-500 text-white font-black px-3.5 py-1.5 rounded-2xl border-b-4 border-rose-700 text-sm md:text-base flex items-center gap-1 shadow">
+                <span id="lives-display">❤️❤️❤️</span>
+            </div>
+
+            <!-- Timer -->
+            <div class="bg-teal-500 text-white font-black px-3.5 py-1.5 rounded-2xl border-b-4 border-teal-700 text-sm md:text-base flex items-center gap-1.5 shadow font-mono">
+                <i class="fa-solid fa-stopwatch"></i>
+                <span id="timer-display">02:00</span>
+            </div>
+
+            <!-- Sound Toggle -->
+            <button onclick="toggleSound()" id="sound-btn" class="bg-white border-4 border-sky-300 p-2 sm:p-2.5 rounded-2xl hover:bg-sky-50 text-sky-500 shadow-md text-lg transition">
+                <i class="fa-solid fa-volume-high"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="w-full max-w-5xl mx-auto flex-grow grid grid-cols-1 lg:grid-cols-12 gap-4 my-auto">
+        
+        <!-- LEFT: MAP GRID (7 Cols) -->
+        <section class="lg:col-span-7 bg-white rounded-3xl p-4 md:p-6 border-4 border-sky-400 card-shadow flex flex-col justify-between items-center relative overflow-hidden">
+            <!-- Level Title & Instructions -->
+            <div class="w-full flex justify-between items-center mb-3 px-2">
+                <div>
+                    <span class="text-xs font-bold text-sky-500 uppercase tracking-wider" id="level-subtitle">LEVEL 1</span>
+                    <h2 class="text-lg md:text-xl font-black text-slate-800" id="level-title">เรียนรู้การเดินหน้า</h2>
+                </div>
+                <button onclick="resetCurrentLevel()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-3 py-1.5 rounded-xl border-2 border-slate-300 transition flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-left"></i> รีเซ็ตตำแหน่ง
+                </button>
+            </div>
+
+            <!-- MAP CONTAINER -->
+            <div class="w-full flex-grow flex items-center justify-center p-2">
+                <div id="game-grid" class="grid gap-2 p-3 bg-emerald-100 border-4 border-emerald-400 rounded-3xl shadow-inner max-w-md w-full aspect-square relative">
+                    <!-- Dynamic Grid Cells via JS -->
+                </div>
+            </div>
+
+            <!-- Hint / Objective Bar -->
+            <div class="w-full bg-sky-50 border-2 border-sky-200 rounded-2xl p-2.5 mt-3 text-center text-xs md:text-sm font-semibold text-sky-800 flex items-center justify-center gap-2">
+                <span class="text-lg">💡</span>
+                <span id="level-hint">พาเจ้ากระต่ายเดินไปเก็บแครอทให้ครบทุกลูกนะ!</span>
+            </div>
+        </section>
+
+        <!-- RIGHT: CODE PROGRAMMING PANELS (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-3">
+            
+            <!-- PALETTE: Available Command Cards -->
+            <div class="bg-white rounded-3xl p-4 border-4 border-purple-300 card-shadow">
+                <h3 class="text-sm font-extrabold text-purple-700 mb-2.5 flex items-center gap-2">
+                    <i class="fa-solid fa-cubes"></i> การ์ดคำสั่ง (คลิกหรือลากวาง)
+                </h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="addCommand('FORWARD')" class="btn-press bg-amber-400 hover:bg-amber-500 text-amber-950 font-black py-2.5 px-3 rounded-2xl border-b-4 border-amber-600 flex items-center justify-center gap-2 text-sm md:text-base">
+                        <span class="text-xl">⬆️</span> เดินหน้า
+                    </button>
+                    <button onclick="addCommand('TURN_LEFT')" class="btn-press bg-sky-400 hover:bg-sky-500 text-sky-950 font-black py-2.5 px-3 rounded-2xl border-b-4 border-sky-600 flex items-center justify-center gap-2 text-sm md:text-base">
+                        <span class="text-xl">⬅️</span> เลี้ยวซ้าย
+                    </button>
+                    <button onclick="addCommand('TURN_RIGHT')" class="btn-press bg-indigo-400 hover:bg-indigo-500 text-indigo-950 font-black py-2.5 px-3 rounded-2xl border-b-4 border-indigo-600 flex items-center justify-center gap-2 text-sm md:text-base">
+                        <span class="text-xl">➡️</span> เลี้ยวขวา
+                    </button>
+                    <button onclick="addCommand('COLLECT')" class="btn-press bg-orange-400 hover:bg-orange-500 text-orange-950 font-black py-2.5 px-3 rounded-2xl border-b-4 border-orange-600 flex items-center justify-center gap-2 text-sm md:text-base">
+                        <span class="text-xl">🥕</span> เก็บแครอท
+                    </button>
+                </div>
+            </div>
+
+            <!-- PROGRAM SEQUENCER (DROP ZONE) -->
+            <div class="bg-white rounded-3xl p-4 border-4 border-emerald-400 card-shadow flex-grow flex flex-col justify-between min-h-[220px]">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-extrabold text-emerald-700 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol"></i> ชุดคำสั่งของคุณ (<span id="command-count">0</span>)
+                        </h3>
+                        <button onclick="clearCommands()" class="text-xs text-rose-500 hover:text-rose-700 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> ล้างทั้งหมด
+                        </button>
+                    </div>
+
+                    <!-- Program List Drop Area -->
+                    <div id="program-list" class="flex flex-wrap gap-2 p-3 bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl min-h-[130px] max-h-[200px] overflow-y-auto items-start align-content-start">
+                        <p id="empty-program-msg" class="text-slate-400 text-xs text-center w-full my-auto font-medium py-4">
+                            👈 คลิกที่การ์ดคำสั่งด้านบนเพื่อสร้างอัลกอริทึม
+                        </p>
+                    </div>
+                </div>
+
+                <!-- CONTROLS: RUN / STEP -->
+                <div class="pt-3 flex gap-2">
+                    <button id="run-btn" onclick="runProgram()" class="btn-press flex-1 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-extrabold py-3.5 px-4 rounded-2xl border-b-4 border-emerald-700 text-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play text-xl"></i>
+                        <span>RUN (เริ่มทำงาน)</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MODAL: FEEDBACK POPUP (SUCCESS / ERROR) -->
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full text-center border-4 card-shadow relative animate-bounce-short" id="modal-box">
+            
+            <div id="modal-icon-badge" class="w-20 h-20 rounded-full flex items-center justify-center text-5xl mx-auto -mt-16 mb-3 border-4 shadow-lg bg-white">
+                🥕
+            </div>
+
+            <h3 id="modal-title" class="text-2xl md:text-3xl font-black mb-2 text-slate-800">
+                เก็บแครอทสำเร็จ!
+            </h3>
+
+            <p id="modal-message" class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-3.5 mb-6 text-slate-700 text-sm md:text-base font-medium leading-relaxed">
+                ยอดเยี่ยมมาก! อัลกอริทึมของคุณทำงานได้อย่างถูกต้อง
+            </p>
+
+            <button id="modal-action-btn" onclick="closeModal()" class="btn-press w-full bg-sky-500 hover:bg-sky-600 text-white text-lg font-bold py-3 px-6 rounded-2xl border-b-4 border-sky-700 flex items-center justify-center gap-2">
+                <span>ด่านต่อไป</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: FINAL SUMMARY SCREEN -->
+    <div id="summary-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center border-4 border-amber-400 card-shadow relative">
+            <div class="text-6xl mb-2 animate-float">🏆</div>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-amber-500 mb-1">ภารกิจเสร็จสิ้น!</h2>
+            <p class="text-slate-500 font-semibold mb-4 text-sm">คุณคือยอดนักเขียนโปรแกรมพิทักษ์กระต่ายน้อย</p>
+
+            <!-- Final Stars -->
+            <div id="final-stars" class="text-5xl mb-6 tracking-widest">⭐⭐⭐</div>
+
+            <!-- Score Details -->
+            <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-6 grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-slate-500 text-xs font-bold">คะแนนรวม</p>
+                    <p id="final-score" class="text-3xl font-black text-amber-500">0</p>
+                </div>
+                <div>
+                    <p class="text-slate-500 text-xs font-bold">เวลาที่ใช้</p>
+                    <p id="final-time" class="text-2xl font-black text-teal-600">00:00</p>
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="btn-press w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-black py-4 px-8 rounded-2xl border-b-4 border-emerald-700 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>เล่นใหม่อีกครั้ง</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-3 text-center text-xs text-sky-600 font-medium">
+        Code Rabbit – สื่อการเรียนรู้วิทยาการคำนวณ (การแก้ปัญหาด้วยอัลกอริทึม) ม.2 © 2026
+    </footer>
+
+    <script>
+        /* SOUND SYNTHESIZER ENGINE (Web Audio API) */
+        let soundEnabled = true;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'step') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(500, now + 0.08);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'turn') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'collect') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        noteGain.gain.setValueAtTime(0.15, now + idx * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.25);
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.start(now + idx * 0.12);
+                        noteOsc.stop(now + idx * 0.12 + 0.25);
+                    });
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(450, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch(e) {}
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark text-rose-500"></i>';
+        }
+
+        /* DIRECTIONS: 0=UP (North), 1=RIGHT (East), 2=DOWN (South), 3=LEFT (West) */
+        const DIR_OFFSETS = [
+            { r: -1, c: 0, arrow: '⬆️' }, // UP
+            { r: 0, c: 1, arrow: '➡️' },  // RIGHT
+            { r: 1, c: 0, arrow: '⬇️' },  // DOWN
+            { r: 0, c: -1, arrow: '⬅️' }   // LEFT
+        ];
+
+        /* LEVELS CONFIGURATION */
+        const LEVELS = [
+            {
+                id: 1,
+                title: "เรียนรู้การเดินหน้า 🚀",
+                hint: "กระต่ายต้องเดินหน้า 3 ครั้งเพื่อไปหาแครอท แล้วใช้คำสั่ง 'เก็บแครอท'",
+                gridSize: 4,
+                startPos: { r: 3, c: 0 },
+                startDir: 0, // UP
+                carrots: [{ r: 0, c: 0 }],
+                obstacles: []
+            },
+            {
+                id: 2,
+                title: "ฝึกการเลี้ยวมุมฉาก ↩️",
+                hint: "เดินหน้า แล้วเลี้ยวขวาเพื่อมุ่งหน้าไปหาแครอท",
+                gridSize: 4,
+                startPos: { r: 3, c: 0 },
+                startDir: 0, // UP
+                carrots: [{ r: 1, c: 3 }],
+                obstacles: [
+                    { r: 0, c: 0 }, { r: 0, c: 1 }, { r: 0, c: 2 }
+                ]
+            },
+            {
+                id: 3,
+                title: "หลบสิ่งกีดขวาง 🐞",
+                hint: "วางแผนเส้นทางหลบเต่าทองและก้อนหินให้ดี!",
+                gridSize: 5,
+                startPos: { r: 4, c: 0 },
+                startDir: 0,
+                carrots: [{ r: 0, c: 4 }],
+                obstacles: [
+                    { r: 3, c: 0 }, { r: 2, c: 2 }, { r: 1, c: 4 }
+                ]
+            },
+            {
+                id: 4,
+                title: "ภารกิจแครอทคู่ 🥕🥕",
+                hint: "มีแครอท 2 ลูก! ต้องเดินเก็บให้ครบทั้งสองลูกนะ",
+                gridSize: 5,
+                startPos: { r: 4, c: 2 },
+                startDir: 0,
+                carrots: [{ r: 2, c: 0 }, { r: 0, c: 4 }],
+                obstacles: [
+                    { r: 3, c: 2 }, { r: 2, c: 1 }, { r: 1, c: 3 }
+                ]
+            },
+            {
+                id: 5,
+                title: "เขาวงกตแครอทขั้นเซียน 👑",
+                hint: "ด่านสุดท้าย! วางแผนลำดับคำสั่งที่ซับซ้อนเพื่อเก็บแครอททั้งหมด",
+                gridSize: 5,
+                startPos: { r: 4, c: 0 },
+                startDir: 0,
+                carrots: [{ r: 0, c: 2 }, { r: 2, c: 4 }],
+                obstacles: [
+                    { r: 3, c: 1 }, { r: 1, c: 1 }, { r: 2, c: 2 }, { r: 3, c: 3 }
+                ]
+            }
+        ];
+
+        /* STATE VARIABLES */
+        let currentLevelIdx = 0;
+        let score = 0;
+        let lives = 3;
+        let timerInterval = null;
+        let timeRemaining = 120;
+        let totalTimeSpent = 0;
+
+        let userProgram = [];
+        let bunnyPos = { r: 0, c: 0 };
+        let bunnyDir = 0;
+        let remainingCarrots = [];
+        let isRunning = false;
+
+        /* INITIALIZE GAME */
+        window.onload = function() {
+            loadLevel(0);
+            startTimer();
+        };
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeRemaining = 120;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                totalTimeSpent++;
+                updateTimerDisplay();
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeRemaining / 60);
+            const s = timeRemaining % 60;
+            document.getElementById('timer-display').innerText = 
+                `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+
+        function loadLevel(levelIdx) {
+            currentLevelIdx = levelIdx;
+            const lvl = LEVELS[levelIdx];
+
+            bunnyPos = { ...lvl.startPos };
+            bunnyDir = lvl.startDir;
+            remainingCarrots = JSON.parse(JSON.stringify(lvl.carrots));
+            userProgram = [];
+
+            // Update UI Labels
+            document.getElementById('level-display').innerText = `ด่าน ${lvl.id}/5`;
+            document.getElementById('level-subtitle').innerText = `LEVEL ${lvl.id}`;
+            document.getElementById('level-title').innerText = lvl.title;
+            document.getElementById('level-hint').innerText = lvl.hint;
+
+            renderGrid();
+            renderProgramList();
+        }
+
+        function renderGrid() {
+            const lvl = LEVELS[currentLevelIdx];
+            const gridEl = document.getElementById('game-grid');
+            gridEl.style.gridTemplateColumns = `repeat(${lvl.gridSize}, minmax(0, 1fr))`;
+            gridEl.innerHTML = '';
+
+            for (let r = 0; r < lvl.gridSize; r++) {
+                for (let c = 0; c < lvl.gridSize; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell bg-emerald-200/60 border-2 border-emerald-300 rounded-2xl flex items-center justify-center relative aspect-square shadow-sm';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+
+                    // 1. Check Obstacle
+                    const isObstacle = lvl.obstacles.some(o => o.r === r && o.c === c);
+                    if (isObstacle) {
+                        cell.innerHTML = '<span class="text-2xl sm:text-3xl">🐞</span>';
+                        cell.classList.add('bg-rose-100', 'border-rose-300');
+                    }
+
+                    // 2. Check Carrot
+                    const isCarrot = remainingCarrots.some(k => k.r === r && k.c === c);
+                    if (isCarrot) {
+                        cell.innerHTML = '<span class="text-2xl sm:text-3xl animate-pulse-bounce">🥕</span>';
+                    }
+
+                    // 3. Check Bunny Position
+                    if (bunnyPos.r === r && bunnyPos.c === c) {
+                        const bunnySpan = document.createElement('span');
+                        bunnySpan.className = 'bunny-sprite text-3xl sm:text-4xl absolute z-10';
+                        bunnySpan.innerText = '🐰';
+                        
+                        // Rotation transform based on direction
+                        const degrees = bunnyDir * 90;
+                        bunnySpan.style.transform = `rotate(${degrees}deg)`;
+                        cell.appendChild(bunnySpan);
+                    }
+
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        /* PROGRAMMING BLOCK COMMAND MANAGERS */
+        function addCommand(type) {
+            if (isRunning) return;
+            playSound('click');
+            userProgram.push(type);
+            renderProgramList();
+        }
+
+        function removeCommand(index) {
+            if (isRunning) return;
+            playSound('click');
+            userProgram.splice(index, 1);
+            renderProgramList();
+        }
+
+        function clearCommands() {
+            if (isRunning) return;
+            playSound('click');
+            userProgram = [];
+            renderProgramList();
+        }
+
+        function renderProgramList() {
+            const listEl = document.getElementById('program-list');
+            document.getElementById('command-count').innerText = userProgram.length;
+
+            if (userProgram.length === 0) {
+                listEl.innerHTML = `
+                    <p id="empty-program-msg" class="text-slate-400 text-xs text-center w-full my-auto font-medium py-4">
+                        👈 คลิกการ์ดคำสั่งด้านบนเพื่อสร้างอัลกอริทึม
+                    </p>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = '';
+            userProgram.forEach((cmd, idx) => {
+                const item = document.createElement('div');
+                let badgeClass = '';
+                let icon = '';
+                let label = '';
+
+                if (cmd === 'FORWARD') {
+                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                    icon = '⬆️'; label = 'เดินหน้า';
+                } else if (cmd === 'TURN_LEFT') {
+                    badgeClass = 'bg-sky-100 text-sky-800 border-sky-300';
+                    icon = '⬅️'; label = 'เลี้ยวซ้าย';
+                } else if (cmd === 'TURN_RIGHT') {
+                    badgeClass = 'bg-indigo-100 text-indigo-800 border-indigo-300';
+                    icon = '➡️'; label = 'เลี้ยวขวา';
+                } else if (cmd === 'COLLECT') {
+                    badgeClass = 'bg-orange-100 text-orange-800 border-orange-300';
+                    icon = '🥕'; label = 'เก็บแครอท';
+                }
+
+                item.className = `flex items-center gap-1.5 border-2 ${badgeClass} px-2.5 py-1 rounded-xl text-xs font-bold shadow-sm transition hover:scale-105 cursor-pointer`;
+                item.onclick = () => removeCommand(idx);
+                item.id = `cmd-item-${idx}`;
+
+                item.innerHTML = `
+                    <span>${icon}</span>
+                    <span>${label}</span>
+                    <i class="fa-solid fa-xmark text-[10px] opacity-60 hover:opacity-100 ml-1"></i>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        /* RUN ALGORITHM EXECUTION */
+        async function runProgram() {
+            if (isRunning) return;
+            if (userProgram.length === 0) {
+                showModal('empty');
+                return;
+            }
+
+            isRunning = true;
+            document.getElementById('run-btn').classList.add('opacity-50', 'pointer-events-none');
+
+            // Reset bunny position before running
+            const lvl = LEVELS[currentLevelIdx];
+            bunnyPos = { ...lvl.startPos };
+            bunnyDir = lvl.startDir;
+            remainingCarrots = JSON.parse(JSON.stringify(lvl.carrots));
+            renderGrid();
+
+            let hasError = false;
+
+            for (let i = 0; i < userProgram.length; i++) {
+                const cmd = userProgram[i];
+                
+                // Highlight active executing block
+                highlightBlock(i);
+                await sleep(400);
+
+                if (cmd === 'FORWARD') {
+                    const offset = DIR_OFFSETS[bunnyDir];
+                    const nextR = bunnyPos.r + offset.r;
+                    const nextC = bunnyPos.c + offset.c;
+
+                    // Boundary Check
+                    if (nextR < 0 || nextR >= lvl.gridSize || nextC < 0 || nextC >= lvl.gridSize) {
+                        playSound('error');
+                        showModal('boundary');
+                        hasError = true;
+                        break;
+                    }
+
+                    // Obstacle Collision Check
+                    const isObstacle = lvl.obstacles.some(o => o.r === nextR && o.c === nextC);
+                    if (isObstacle) {
+                        playSound('error');
+                        showModal('obstacle');
+                        hasError = true;
+                        break;
+                    }
+
+                    bunnyPos = { r: nextR, c: nextC };
+                    playSound('step');
+                    renderGrid();
+
+                } else if (cmd === 'TURN_LEFT') {
+                    bunnyDir = (bunnyDir + 3) % 4; // Turn Left 90 deg
+                    playSound('turn');
+                    renderGrid();
+
+                } else if (cmd === 'TURN_RIGHT') {
+                    bunnyDir = (bunnyDir + 1) % 4; // Turn Right 90 deg
+                    playSound('turn');
+                    renderGrid();
+
+                } else if (cmd === 'COLLECT') {
+                    const carrotIdx = remainingCarrots.findIndex(k => k.r === bunnyPos.r && k.c === bunnyPos.c);
+                    if (carrotIdx !== -1) {
+                        remainingCarrots.splice(carrotIdx, 1);
+                        playSound('collect');
+                        renderGrid();
+                    } else {
+                        playSound('error');
+                        showModal('no_carrot');
+                        hasError = true;
+                        break;
+                    }
+                }
+
+                await sleep(300);
+            }
+
+            unhighlightAllBlocks();
+
+            if (!hasError) {
+                // Check if all carrots were collected
+                if (remainingCarrots.length === 0) {
+                    playSound('win');
+                    score += 100 + (timeRemaining * 2);
+                    document.getElementById('score-display').innerText = score;
+                    
+                    if (currentLevelIdx + 1 < LEVELS.length) {
+                        showModal('success');
+                    } else {
+                        showFinalSummary();
+                    }
+                } else {
+                    playSound('error');
+                    showModal('incomplete');
+                }
+            }
+
+            isRunning = false;
+            document.getElementById('run-btn').classList.remove('opacity-50', 'pointer-events-none');
+        }
+
+        function highlightBlock(index) {
+            unhighlightAllBlocks();
+            const el = document.getElementById(`cmd-item-${index}`);
+            if (el) {
+                el.classList.add('ring-4', 'ring-emerald-400', 'scale-110');
+            }
+        }
+
+        function unhighlightAllBlocks() {
+            document.querySelectorAll('#program-list > div').forEach(el => {
+                el.classList.remove('ring-4', 'ring-emerald-400', 'scale-110');
+            });
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function resetCurrentLevel() {
+            if (isRunning) return;
+            playSound('click');
+            loadLevel(currentLevelIdx);
+        }
+
+        /* MODAL DIALOG CONTROLLER */
+        function showModal(type) {
+            const modal = document.getElementById('feedback-modal');
+            const badge = document.getElementById('modal-icon-badge');
+            const title = document.getElementById('modal-title');
+            const msg = document.getElementById('modal-message');
+            const btn = document.getElementById('modal-action-btn');
+
+            modal.classList.remove('hidden');
+
+            if (type === 'success') {
+                badge.innerText = "🥕";
+                badge.className = "w-20 h-20 rounded-full flex items-center justify-center text-5xl mx-auto -mt-16 mb-3 border-4 shadow-lg bg-emerald-100 border-emerald-400 text-emerald-600";
+                title.innerText = "เก็บแครอทสำเร็จ!";
+                title.className = "text-2xl md:text-3xl font-black mb-2 text-emerald-600";
+                msg.innerText = "ยอดเยี่ยมมาก! คุณเขียนอัลกอริทึมพาเจ้ากระต่ายไปเก็บแครอทสำเร็จแล้ว";
+                btn.className = "btn-press w-full bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold py-3 px-6 rounded-2xl border-b-4 border-emerald-700 flex items-center justify-center gap-2";
+                btn.innerHTML = '<span>ผ่านไปยังด่านต่อไป</span> <i class="fa-solid fa-arrow-right"></i>';
+                btn.onclick = () => {
+                    modal.classList.add('hidden');
+                    loadLevel(currentLevelIdx + 1);
+                };
+            } else {
+                // Decrement life on error
+                deductLife();
+
+                badge.innerText = "🐞";
+                badge.className = "w-20 h-20 rounded-full flex items-center justify-center text-5xl mx-auto -mt-16 mb-3 border-4 shadow-lg bg-rose-100 border-rose-400 text-rose-600";
+                title.innerText = "ลองใหม่อีกครั้ง!";
+                title.className = "text-2xl md:text-3xl font-black mb-2 text-rose-600";
+
+                if (type === 'boundary') {
+                    msg.innerText = "กระต่ายน้อยเดินชนขอบแผนที่! ลองปรับเปลี่ยนลำดับการ์ดคำสั่งใหม่นะ";
+                } else if (type === 'obstacle') {
+                    msg.innerText = "ว้าว! ชนสิ่งกีดขวางเต็มๆ ตรวจสอบเส้นทางแล้วลองปรับอัลกอริทึมใหม่ดูนะ";
+                } else if (type === 'no_carrot') {
+                    msg.innerText = "ตรงนี้ไม่มีแครอทให้เก็บ! ตรวจสอบตำแหน่งก่อนใช้คำสั่งเก็บแครอทนะ";
+                } else if (type === 'incomplete') {
+                    msg.innerText = "ยังเก็บแครอทไม่ครบทุกลูกเลย! ลองเพิ่มคำสั่งให้ครอบคลุมแครอททั้งหมดนะ";
+                } else if (type === 'empty') {
+                    msg.innerText = "คุณยังไม่ได้ใส่การ์ดคำสั่งเลย! คลิกการ์ดคำสั่งเพื่อสร้างโปรแกรมก่อนกด RUN";
+                }
+
+                btn.className = "btn-press w-full bg-rose-500 hover:bg-rose-600 text-white text-lg font-bold py-3 px-6 rounded-2xl border-b-4 border-rose-700 flex items-center justify-center gap-2";
+                btn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> <span>แก้ไขคำสั่ง</span>';
+                btn.onclick = () => {
+                    modal.classList.add('hidden');
+                    resetCurrentLevel();
+                };
+            }
+        }
+
+        function deductLife() {
+            lives--;
+            let hearts = '';
+            for (let i = 0; i < 3; i++) {
+                hearts += i < lives ? '❤️' : '🖤';
+            }
+            document.getElementById('lives-display').innerText = hearts;
+
+            if (lives <= 0) {
+                setTimeout(() => {
+                    alert("❤️ ชีวิตหมดแล้ว! เริ่มต้นท้าทายด่านนี้ใหม่อีกครั้ง");
+                    lives = 3;
+                    document.getElementById('lives-display').innerText = '❤️❤️❤️';
+                    resetCurrentLevel();
+                }, 300);
+            }
+        }
+
+        function handleTimeOut() {
+            alert("⏱️ หมดเวลาสืบสวน! ระบบจะรีเซ็ตเวลาให้คุณใหม่");
+            startTimer();
+            resetCurrentLevel();
+        }
+
+        function showFinalSummary() {
+            clearInterval(timerInterval);
+            const modal = document.getElementById('summary-modal');
+            modal.classList.remove('hidden');
+
+            document.getElementById('final-score').innerText = score;
+            const m = Math.floor(totalTimeSpent / 60);
+            const s = totalTimeSpent % 60;
+            document.getElementById('final-time').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+            let stars = '⭐⭐⭐';
+            if (score < 400) stars = '⭐';
+            else if (score < 700) stars = '⭐⭐';
+            document.getElementById('final-stars').innerText = stars;
+        }
+
+        function restartGame() {
+            document.getElementById('summary-modal').classList.add('hidden');
+            score = 0;
+            lives = 3;
+            totalTimeSpent = 0;
+            document.getElementById('score-display').innerText = '0';
+            document.getElementById('lives-display').innerText = '❤️❤️❤️';
+            loadLevel(0);
+            startTimer();
+        }
+
+        function closeModal() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
